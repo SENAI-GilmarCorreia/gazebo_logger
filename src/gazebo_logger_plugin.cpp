@@ -170,8 +170,8 @@ class LoggerPlugin : public WorldPlugin {
                           << std::to_string(systemTime_ms) << this->sep
                           << std::to_string(rtf) << this->sep
                           << "" << this->sep
-                          << std::to_string(this->fps) << this->sep
                           << "" << this->sep
+                          << std::to_string(this->fps) << this->sep
                           << objectsData << std::endl;
                           //<< std::to_string(collisionCount) << std::endl;
         }
