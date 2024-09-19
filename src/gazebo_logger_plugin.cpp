@@ -64,9 +64,9 @@ class LoggerPlugin : public WorldPlugin {
         std::string gazeboPath = std::string(homeDir) + "/.gazebo/logger/";
 
         // Create logs directory if it doesn't exist
-        std::filesystem::path dir(gazeboPath);
-        if (!std::filesystem::exists(dir)) {
-            std::filesystem::create_directories(dir);
+        boost::filesystem::path dir(gazeboPath);
+        if (!boost::filesystem::exists(dir)) {
+            boost::filesystem::create_directories(dir);
         }
 
         // Create CSV file in the .gazebo/logger/ directory
@@ -142,7 +142,7 @@ class LoggerPlugin : public WorldPlugin {
         std::string objectsData = "[";
 
         // Get all models in the world
-        auto& models = _world->Models();
+        auto models = _world->Models();
         for (const auto& model : models){
             objectsData += "{ \"name\": \"" + model->GetName() + "\", ";
             ignition::math::Pose3d pose = model->WorldPose();
