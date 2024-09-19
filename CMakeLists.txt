@@ -43,7 +43,12 @@ install(DIRECTORY include/
         DESTINATION include)
 
 if(WIN32)
-  target_compile_definitions(${PROJECT_NAME} PRIVATE "GAZEBO_ROS_NODE_BUILDING_DLL")
+  target_compile_definitions(${PROJECT_NAME} PRIVATE "GAZEBO_LOGGER_BUILDING_DLL")
+endif()
+
+set(EXPORT_DLL off)
+
+if(EXPORT_DLL)
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_BINARY_DIR}/Release/${PROJECT_NAME}.dll
