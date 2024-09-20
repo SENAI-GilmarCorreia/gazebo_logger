@@ -39,6 +39,13 @@ target_include_directories(${PROJECT_NAME}
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
 target_link_libraries(${PROJECT_NAME} ${GAZEBO_LIBRARIES} ${Qt5Widgets_LIBRARIES})
 
+install(
+    TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}_export
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+)
+
 ament_package()
 
 install(DIRECTORY include/
@@ -48,7 +55,7 @@ if(WIN32)
   target_compile_definitions(${PROJECT_NAME} PRIVATE "GAZEBO_LOGGER_BUILDING_DLL")
 endif()
 
-set(EXPORT_DLL off)
+set(EXPORT_DLL on)
 
 if(EXPORT_DLL)
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -58,3 +65,5 @@ if(EXPORT_DLL)
     COMMENT "Copying gazebo_logger.dll to GAZEBO_PLUGIN_PATH"
   )
 endif()
+
+
