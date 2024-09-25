@@ -56,26 +56,23 @@ class LoggerPlugin : public WorldPlugin {
     void Load(physics::WorldPtr _world, sdf::ElementPtr _sdf) {
         
         // Save logs to the default .gazebo path
-        std::string homeDir;
-        #ifdef _WIN32
-        homeDir = std::getenv("USERPROFILE");
-        #else
-        homeDir = std::getenv("HOME");
-        #endif
-        std::string gazeboPath = std::string(homeDir) + "/.gazebo/logger/";
+        // std::string homeDir;
+        // #ifdef _WIN32
+        // homeDir = std::getenv("USERPROFILE");
+        // #else
+        // homeDir = std::getenv("HOME");
+        // #endif
+        // std::string gazeboPath = std::string(homeDir) + "/.gazebo/logger/";
 
-        // Create logs directory if it doesn't exist
-        #ifdef _WIN32
-        std::filesystem::path dir(gazeboPath.c_str());
-        if (!std::filesystem::exists(dir)) {
-            std::filesystem::create_directories(dir);
-        }
-        #else
+        // Save logs to the default gazebo path
+        std::string naadDir;
+        naadDir = std::getenv("NAAD_WS_DIR");
+        std::string gazeboPath = std::string(naadDir) + "/logs/gazebo/";
+
         boost::filesystem::path dir(gazeboPath.c_str());
         if (!boost::filesystem::exists(dir)) {
             boost::filesystem::create_directories(dir);
         }
-        #endif
 
         // Create CSV file in the .gazebo/logger/ directory
         std::string dateTime = getCurrentDateTime();
@@ -88,7 +85,8 @@ class LoggerPlugin : public WorldPlugin {
         }
 
         // Write CSV headers
-        this->csvFile << "Frame" << this->sep 
+        this->csvFile << "Time Stamp (%Y-%m-%d_%H-%M-%S)" << this->sep
+                      << "Frame" << this->sep 
                       << "GazeboServer - Step Size (ms)" << this->sep
                       << "GazeboServer - Simulation Time (ms)" << this->sep
                       << "GazeboServer - Real Time (ms)" << this->sep
@@ -171,7 +169,8 @@ class LoggerPlugin : public WorldPlugin {
 
         // Write data to CSV file
         if (this->csvFile.is_open()) {
-            this->csvFile << std::to_string(this->frameCount) << this->sep
+            this->csvFile << this->getCurrentDateTime() << this->sep
+                          << std::to_string(this->frameCount) << this->sep
                           << std::to_string(stepSize) << this->sep
                           << std::to_string(simTime) << this->sep
                           << std::to_string(realTime) << this->sep

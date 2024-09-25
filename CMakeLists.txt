@@ -17,6 +17,10 @@ if(WIN32)
   )
 endif()
 
+if(NOT DEFINED ENV{NAAD_WS_DIR})
+  message(FATAL_ERROR "Environment variable NAAD_WS_DIR is not set")
+endif()
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(gazebo REQUIRED)
