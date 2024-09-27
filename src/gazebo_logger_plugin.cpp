@@ -85,7 +85,7 @@ class LoggerPlugin : public WorldPlugin {
         }
 
         // Write CSV headers
-        this->csvFile << "Time Stamp (%Y-%m-%d_%H-%M-%S)" << this->sep
+        this->csvFile << "Timestamp (%Y-%m-%d_%H-%M-%S)" << this->sep
                       << "Frame" << this->sep 
                       << "GazeboServer - Step Size (ms)" << this->sep
                       << "GazeboServer - Simulation Time (ms)" << this->sep
@@ -112,75 +112,76 @@ class LoggerPlugin : public WorldPlugin {
     void OnUpdate(physics::WorldPtr _world) {
         // Increment frame count
         this->frameCount++;
+        if(frameCount%50==0){
+            // Get current simulation time
+            double simTime = _world->SimTime().Double() * 1000.0;  // convert to ms
+            double realTime = _world->RealTime().Double() * 1000; // convert to ms
 
-        // Get current simulation time
-        double simTime = _world->SimTime().Double() * 1000.0;  // convert to ms
-        double realTime = _world->RealTime().Double() * 1000; // convert to ms
+            // Get system time since plugin start
+            auto currentTime = std::chrono::high_resolution_clock::now();
+            auto systemTime_ms = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - initialTime).count();
 
-        // Get system time since plugin start
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        auto systemTime_ms = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - initialTime).count();
+            // Calculate FPS if at least 1 second has passed
+            std::chrono::duration<float> elapsedTime = currentTime - this->lastTime;
+            if (elapsedTime.count() >= 1.0f) {
+                this->fps = this->frameCount / elapsedTime.count();
+                this->frameCount = 0;
+                this->lastTime = currentTime;
+            }
 
-        // Calculate FPS if at least 1 second has passed
-        std::chrono::duration<float> elapsedTime = currentTime - this->lastTime;
-        if (elapsedTime.count() >= 1.0f) {
-            this->fps = this->frameCount / elapsedTime.count();
-            this->frameCount = 0;
-            this->lastTime = currentTime;
-        }
+            double rtf = simTime/realTime;
 
-        double rtf = simTime/realTime;
+            // Get the current render rate (frames per second)
+            // std::string worldName = _world->Name();
+            // gazebo::rendering::ScenePtr scene = gazebo::rendering::get_scene(worldName);
+            // if (!scene)
+            // {
+            //     std::cerr << "Cena não foi carregada corretamente." << std::endl;
+            //     return;
+            // }
 
-        // Get the current render rate (frames per second)
-        // std::string worldName = _world->Name();
-        // gazebo::rendering::ScenePtr scene = gazebo::rendering::get_scene(worldName);
-        // if (!scene)
-        // {
-        //     std::cerr << "Cena não foi carregada corretamente." << std::endl;
-        //     return;
-        // }
+            // // Obtém as câmeras conectadas à cena
+            // gazebo::rendering::CameraPtr camera = scene->GetCamera("gzclient_camera");
+            // double renderRate = camera->RenderRate();
 
-        // // Obtém as câmeras conectadas à cena
-        // gazebo::rendering::CameraPtr camera = scene->GetCamera("gzclient_camera");
-        // double renderRate = camera->RenderRate();
+            // Log active objects in the simulation
+            std::string objectsData = "[";
 
-        // Log active objects in the simulation
-        std::string objectsData = "[";
+            // Get all models in the world
+            auto models = _world->Models();
+            for (const auto& model : models){
+                objectsData += "{ \"name\": \"" + model->GetName() + "\", ";
+                ignition::math::Pose3d pose = model->WorldPose();
+                objectsData += "\"pose\": [" + std::to_string(pose.Pos().X()) + ", " 
+                                            + std::to_string(pose.Pos().Y()) + ", "
+                                            + std::to_string(pose.Pos().Z()) + ", "
+                                            + std::to_string(pose.Rot().W()) + ", "
+                                            + std::to_string(pose.Rot().X()) + ", "
+                                            + std::to_string(pose.Rot().Y()) + ", "
+                                            + std::to_string(pose.Rot().Z()) + "]}";
 
-        // Get all models in the world
-        auto models = _world->Models();
-        for (const auto& model : models){
-            objectsData += "{ \"name\": \"" + model->GetName() + "\", ";
-            ignition::math::Pose3d pose = model->WorldPose();
-            objectsData += "\"pose\": [" + std::to_string(pose.Pos().X()) + ", " 
-                                         + std::to_string(pose.Pos().Y()) + ", "
-                                         + std::to_string(pose.Pos().Z()) + ", "
-                                         + std::to_string(pose.Rot().W()) + ", "
-                                         + std::to_string(pose.Rot().X()) + ", "
-                                         + std::to_string(pose.Rot().Y()) + ", "
-                                         + std::to_string(pose.Rot().Z()) + "]}";
+                objectsData += ", ";
+            }
+            objectsData += "]";
 
-            objectsData += ", ";
-        }
-        objectsData += "]";
+            // Get simulation step size
+            double stepSize = _world->Physics()->GetMaxStepSize() * 1000;  // Convert to ms
 
-        // Get simulation step size
-        double stepSize = _world->Physics()->GetMaxStepSize() * 1000;  // Convert to ms
-
-        // Write data to CSV file
-        if (this->csvFile.is_open()) {
-            this->csvFile << this->getCurrentDateTime() << this->sep
-                          << std::to_string(this->frameCount) << this->sep
-                          << std::to_string(stepSize) << this->sep
-                          << std::to_string(simTime) << this->sep
-                          << std::to_string(realTime) << this->sep
-                          << std::to_string(systemTime_ms) << this->sep
-                          << "" << this->sep //<< std::to_string(rtf) << this->sep
-                          << "" << this->sep // os_rtf
-                          << "" << this->sep // render fps
-                          << std::to_string(this->fps) << this->sep
-                          << objectsData << std::endl;
-                          //<< std::to_string(collisionCount) << std::endl;
+            // Write data to CSV file
+            if (this->csvFile.is_open()) {
+                this->csvFile << this->getCurrentDateTime() << this->sep
+                            << std::to_string(this->frameCount) << this->sep
+                            << std::to_string(stepSize) << this->sep
+                            << std::to_string(simTime) << this->sep
+                            << std::to_string(realTime) << this->sep
+                            << std::to_string(systemTime_ms) << this->sep
+                            << "" << this->sep //<< std::to_string(rtf) << this->sep
+                            << "" << this->sep // os_rtf
+                            << "" << this->sep // render fps
+                            << std::to_string(this->fps) << this->sep
+                            << objectsData << std::endl;
+                            //<< std::to_string(collisionCount) << std::endl;
+            }
         }
     }
 };
