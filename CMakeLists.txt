@@ -9,30 +9,35 @@ set(CMAKE_CXX_STANDARD 17)
 
 if(WIN32)
   add_compile_definitions(
-    # For math constants
     _USE_MATH_DEFINES
-    # Minimize Windows namespace collision
     NOMINMAX
     WIN32_LEAN_AND_MEAN
   )
 endif()
 
+# Check if NAAD_WS_DIR is defined
 if(NOT DEFINED ENV{NAAD_WS_DIR})
   message(FATAL_ERROR "Environment variable NAAD_WS_DIR is not set")
 endif()
 
-# find dependencies
+# Find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(gazebo REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
-include_directories(${Qt5Core_INCLUDE_DIRS})
-include_directories(${GAZEBO_INCLUDE_DIRS})
+
+# Include directories and libraries
+include_directories(
+  ${Qt5Core_INCLUDE_DIRS}
+  ${GAZEBO_INCLUDE_DIRS}
+)
+
 link_directories(${GAZEBO_LIBRARY_DIRS})
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
+# Create shared library for the plugin
 add_library(${PROJECT_NAME} SHARED src/gazebo_logger_plugin.cpp)
 
-# Link against Gazebo and Protobuf libraries
+# Set include directories for the target
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -40,34 +45,39 @@ target_include_directories(${PROJECT_NAME}
     ${gazebo_INCLUDE_DIRS}
 )
 
+# Set target properties
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
+
+# Link the target to the required libraries
 target_link_libraries(${PROJECT_NAME} ${GAZEBO_LIBRARIES} ${Qt5Widgets_LIBRARIES})
 
+# Install the library
 install(
-    TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}_export
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
+  TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}_export
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
-ament_package()
-
+# Install include files
 install(DIRECTORY include/
-        DESTINATION include)
+  DESTINATION include)
 
 if(WIN32)
   target_compile_definitions(${PROJECT_NAME} PRIVATE "GAZEBO_LOGGER_BUILDING_DLL")
-endif()
-
-set(EXPORT_DLL on)
-
-if(EXPORT_DLL)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_BINARY_DIR}/Release/${PROJECT_NAME}.dll
-        $ENV{GAZEBO_PLUGIN_PATH}
-    COMMENT "Copying gazebo_logger.dll to GAZEBO_PLUGIN_PATH"
+  install(
+    TARGETS ${PROJECT_NAME}
+    LIBRARY DESTINATION $ENV{GAZEBO_PLUGIN_PATH}
   )
 endif()
+# Export include directories and dependencies
+ament_export_include_directories(include)
 
+ament_export_dependencies(
+  ament_cmake
+  gazebo
+)
 
+ament_export_libraries(${PROJECT_NAME})
+
+ament_package()
