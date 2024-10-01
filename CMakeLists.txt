@@ -67,7 +67,7 @@ if(WIN32)
   target_compile_definitions(${PROJECT_NAME} PRIVATE "GAZEBO_LOGGER_BUILDING_DLL")
   install(
     TARGETS ${PROJECT_NAME}
-    LIBRARY DESTINATION $ENV{GAZEBO_PLUGIN_PATH}
+    LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH}
   )
 endif()
 # Export include directories and dependencies
