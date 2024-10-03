@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <filesystem>
 #include <boost/filesystem.hpp>
 #include <gazebo/common/common.hh>
 #include <gazebo/common/Plugin.hh>
