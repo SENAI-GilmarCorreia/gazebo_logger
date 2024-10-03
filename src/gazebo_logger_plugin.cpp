@@ -31,6 +31,23 @@ class LoggerPlugin : public WorldPlugin {
 
     event::ConnectionPtr updateConnection;
 
+    // Helper function to get the latest folder in a directory
+    std::string get_latest_folder(const std::string& path) {
+        std::string latest_folder;
+        std::time_t latest_time = 0;
+
+        for (const auto& entry : std::filesystem::directory_iterator(path)) {
+            if (std::filesystem::is_directory(entry)) {
+                std::time_t folder_time = std::filesystem::last_write_time(entry).time_since_epoch().count();
+                if (folder_time > latest_time) {
+                    latest_time = folder_time;
+                    latest_folder = entry.path().string();
+                }
+            }
+        }
+        return latest_folder;
+    }
+
     // Helper function to get the current date and time for the CSV filename
     std::string getCurrentDateTime() {
         auto now = std::chrono::system_clock::now();
@@ -51,7 +68,7 @@ class LoggerPlugin : public WorldPlugin {
         if (csvFile.is_open()) {
             csvFile.close();
         }
-    }   
+    }
 
     void Load(physics::WorldPtr _world, sdf::ElementPtr _sdf) {
         
@@ -67,8 +84,17 @@ class LoggerPlugin : public WorldPlugin {
         // Save logs to the default gazebo path
         std::string naadDir;
         naadDir = std::getenv("NAAD_WS_DIR");
-        std::string gazeboPath = std::string(naadDir) + "/logs/gazebo/";
+        std::string gazeboPath;
 
+        if (std::getenv("NAAD_CONFIG_LOGS")){
+            gazeboPath = get_latest_folder(std::string(naadDir) + "/logs");
+            gazeboPath += "/gazebo/";
+        }
+        else{
+            gazeboPath = std::string(naadDir) + "/logs/gazebo/";
+        }
+
+        // Create the directory if it doesn't exist
         boost::filesystem::path dir(gazeboPath.c_str());
         if (!boost::filesystem::exists(dir)) {
             boost::filesystem::create_directories(dir);
