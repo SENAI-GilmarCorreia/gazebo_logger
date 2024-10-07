@@ -97,24 +97,28 @@ class LoggerPlugin : public WorldPlugin {
         std::string naadDir;
         naadDir = std::getenv("NAAD_WS_DIR");
         std::string gazeboPath;
+        std::string fileName = gazeboPath;
 
         if (std::getenv("NAAD_CONFIG_LOGS")){
             gazeboPath = get_latest_folder(std::string(naadDir) + "/logs");
             gazeboPath += "/gazebo/";
+
+            // Create CSV file in the .gazebo/logger/ directory
+            fileName += "gazeboLogger.csv";
         }
         else{
             gazeboPath = std::string(naadDir) + "/logs/gazebo/";
+
+            // Create CSV file in the .gazebo/logger/ directory
+            std::string dateTime = getCurrentDateTime();
+            fileName += "gazeboLogger_" + dateTime + ".csv";
         }
 
         // Create the directory if it doesn't exist
         boost::filesystem::path dir(gazeboPath.c_str());
         if (!boost::filesystem::exists(dir)) {
             boost::filesystem::create_directories(dir);
-        }
-
-        // Create CSV file in the .gazebo/logger/ directory
-        std::string dateTime = getCurrentDateTime();
-        std::string fileName = gazeboPath + "gazeboLogger_" + dateTime + ".csv";
+        }       
 
         // Open CSV file
         this->csvFile.open(fileName);
