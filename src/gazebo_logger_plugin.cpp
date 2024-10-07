@@ -39,13 +39,24 @@ class LoggerPlugin : public WorldPlugin {
 
         for (const auto& entry : std::filesystem::directory_iterator(path)) {
             if (std::filesystem::is_directory(entry)) {
-                std::time_t folder_time = std::filesystem::last_write_time(entry).time_since_epoch().count();
+                // Obtém o tempo de modificação do diretório
+                auto ftime = std::filesystem::last_write_time(entry);
+
+                // Converte o file_time_type para system_clock::time_point
+                auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+                    ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
+
+                // Converte para time_t
+                std::time_t folder_time = std::chrono::system_clock::to_time_t(sctp);
+
+                // Verifica se o timestamp é mais recente
                 if (folder_time > latest_time) {
                     latest_time = folder_time;
                     latest_folder = entry.path().string();
                 }
             }
         }
+        
         return latest_folder;
     }
 
