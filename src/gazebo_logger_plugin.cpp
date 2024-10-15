@@ -26,6 +26,7 @@ class LoggerPlugin : public WorldPlugin {
     std::ofstream csvFile;
     std::chrono::high_resolution_clock::time_point lastTime, initialTime;
     int frameCount = 0;
+    int totalFrames = 0;
     float fps = 0.0f;
     char sep = ';';
     std::string model_name = "";
@@ -73,6 +74,7 @@ class LoggerPlugin : public WorldPlugin {
    public:
     LoggerPlugin() : WorldPlugin() {
         frameCount = 0;
+        totalFrames = 0;
         fps = 0.0f;
     }
 
@@ -129,15 +131,15 @@ class LoggerPlugin : public WorldPlugin {
         // Write CSV headers
         this->csvFile << "Timestamp (%Y-%m-%d_%H-%M-%S)" << this->sep
                       << "Frame" << this->sep 
-                      << "GazeboServer - Step Size (ms)" << this->sep
-                      << "GazeboServer - Simulation Time (ms)" << this->sep
-                      << "GazeboServer - Real Time (ms)" << this->sep
+                      << "GazeboClassic - Step Size (ms)" << this->sep //GazeboServer
+                      << "GazeboClassic - Simulation Time (ms)" << this->sep //GazeboServer
+                      << "GazeboClassic - Real Time (ms)" << this->sep //GazeboServer
                       << "OS - System Time (ms)" << this->sep
-                      << "GazeboServer - RTF" << this->sep
+                      << "GazeboClassic - RTF" << this->sep // GazeboServer
                       << "OS - RTF" << this->sep
-                      << "GazeboClient - Render FPS (Hz)" << this->sep
+                      << "GazeboClassic - Render FPS (Hz)" << this->sep // GazeboClient
                       << "OS - Plugin FPS (Hz)" << this->sep
-                      << "Pose Data" << std::endl;
+                      << "Active Objects" << std::endl;
                       //<< "Collision Count" << std::endl;
 
         // Initialize time points for FPS calculation
@@ -154,6 +156,7 @@ class LoggerPlugin : public WorldPlugin {
     void OnUpdate(physics::WorldPtr _world) {
         // Increment frame count
         this->frameCount++;
+        this->totalFrames++;
         if(frameCount%50==0){
             // Get current simulation time
             double simTime = _world->SimTime().Double() * 1000.0;  // convert to ms
@@ -192,7 +195,7 @@ class LoggerPlugin : public WorldPlugin {
             // Get all models in the world
             auto models = _world->Models();
             for (const auto& model : models){
-                objectsData += "{ \"name\": \"" + model->GetName() + "\", ";
+                objectsData += "{ \"alias\": \"" + model->GetName() + "\", ";
                 ignition::math::Pose3d pose = model->WorldPose();
                 objectsData += "\"pose\": [" + std::to_string(pose.Pos().X()) + ", " 
                                             + std::to_string(pose.Pos().Y()) + ", "
@@ -212,7 +215,7 @@ class LoggerPlugin : public WorldPlugin {
             // Write data to CSV file
             if (this->csvFile.is_open()) {
                 this->csvFile << this->getCurrentDateTime() << this->sep
-                            << std::to_string(this->frameCount) << this->sep
+                            << std::to_string(this->totalFrames) << this->sep
                             << std::to_string(stepSize) << this->sep
                             << std::to_string(simTime) << this->sep
                             << std::to_string(realTime) << this->sep
